@@ -31,11 +31,9 @@ var Ball = function(i) {
 	gamestage.addChild(this.animations);
 
 	this.checkCollisions = function() {
-		if(this.animations.x < 0) {
+		if(this.animations.x < 0 || (this.animations.x + this.animations.spriteSheet._frameWidth > gamestage.canvas.width)) {
 			location.reload();
-		} else if(this.animations.x + this.animations.spriteSheet._frameWidth > gamestage.canvas.width) {
-			this.xdirection *= -1;
-		}
+		} 
 		if(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height) {
 			this.ydirection *= -1;
 		}
@@ -73,27 +71,15 @@ var PaddleL = function() {
 
 	this.downwardmovement = false;
 	this.upwardmovement = false;
-	
-	this.hitEdge = false;
 
 	gamestage.addChild(this.animations);
-/*
-	this.checkScreen = function() {
-		if(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height) {
-			this.hitEdge= true;
-		} 
-	};
-*/
+
 	this.updatePosition = function() {
-		if(this.downwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
+		if(this.downwardmovement) {
 			this.animations.y++;
-		} else if(this.upwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
+		} else if(this.upwardmovement) {
 			this.animations.y--;
-		} else if (this.animations.y < 32){
-			this.animations.y = 0;
-		} else if (this.animations.y + 32 > gamestage.canvas.height) {
-			this.animations.y = gamestage.canvas.height-32;
-		} 
+		}
 	};
 };
 var PaddleR = function() {
@@ -121,15 +107,11 @@ var PaddleR = function() {
 	gamestage.addChild(this.animations);
 
 	this.updatePosition = function() {
-		if(this.downwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
+		if(this.downwardmovement) {
 			this.animations.y++;
-		} else if(this.upwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
+		} else if(this.upwardmovement) {
 			this.animations.y--;
-		} else if (this.animations.y < 32){
-			this.animations.y = 0;
-		} else if (this.animations.y + 32 > gamestage.canvas.height) {
-			this.animations.y = gamestage.canvas.height-32;
-		} 
+		}
 	};
 };
 var balls = [];
@@ -148,7 +130,8 @@ var frameTick = function() {
 
 	paddleLeft.updatePosition();
 	paddleRight.updatePosition();
-	
+	isMoving(this);
+	console.log("Moving is: " + moving);
 
 	gamestage.update();
 };
@@ -172,48 +155,41 @@ document.onkeyup = function(event) {
 };
 var prevX = 0;
 var prevY = 0;
-// For right paddle
-document.onmousemove = function(event) {
-	// if the mouse is moving up
-	if(prevY > event.clientY) {
-		console.log("the mouse is moving up");
-		console.log("prev - client is: " + (prevY - event.clientY));
-		console.log("client- prev is: " + (event.clientY - prevY));
-		while(prevY > event.clientY) {
-			paddleRight.downwardmovement = false;
-			paddleRight.upwardmovement = true;
-			prevY--;
+
+// see if mouse is moving or stopped
+function isMoving(event) {
+	if(moving) {
+		document.onmousemove = function(event) {
+			// if the mouse is moving up
+			if((prevY > event.clientY) && moving) {
+				console.log("the mouse is moving up");
+				paddleRight.downwardmovement = false;
+				paddleRight.upwardmovement = true;
+
+				//mouse is moving down
+			} else if((prevY < event.clientY) && moving) {
+				console.log("the mouse is moving down");
+				paddleRight.downwardmovement = true;
+				paddleRight.upwardmovement = false;
+			}
+			prevY = event.clientY;
 		}
-
-		//mouse is moving down
-	} else if(prevY < event.clientY) {
-		console.log("the mouse is moving down");
-
-		console.log("prevY is:" + prevY + "and event.clientY is: " + event.clientY);
-		console.log("prev - client is: " + (prevY - event.clientY));
-		console.log("client- prev is: " + (event.clientY - prevY));
-		paddleRight.downwardmovement = true;
+	} else {
+		paddleRight.downwardmovement = false;
 		paddleRight.upwardmovement = false;
 	}
-	/*else if ((prevY - event.clientY)<10 || (event.clientY - prevY) < 10 ) {
-	 //stop moving the paddle down
-	 console.log("paddle is stopped");
-	 paddleRight.downwardmovement = false;
-	 paddleRight.upwardmovement = false;
-	 } */
-	prevY = event.clientY;
+}
 
-};
-/*
- document.onmousemove = function(event) {
- if(prevY == event.clientY) {
- //stop moving the paddle
- console.log("stop moving the paddle");
- paddleRight.downwardmovement = false;
- paddleRight.upwardmovement = false;
- }
- };
- */
+var timer;
+// boolean to see if mouse is moving
+var moving = false;
+document.addEventListener("mousemove", function() {
+	moving = true;
+	clearTimeout(timer);
+	timer = setTimeout(function() {
+		moving = false
+	}, 1);
+})
 
 createjs.Ticker.addEventListener("tick", frameTick);
 createjs.Ticker.setFPS(60);
