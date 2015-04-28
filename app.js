@@ -23,7 +23,7 @@ var Ball = function(i) {
 		}
 	}), "ball");
 
-	this.animations.x = 32 *i;
+	this.animations.x = 32 * i;
 	this.animations.y = 32 * i;
 	this.xdirection = 1;
 	this.ydirection = 1;
@@ -40,6 +40,9 @@ var Ball = function(i) {
 			this.ydirection *= -1;
 		}
 		if(checkCollision(paddleLeft.animations, this.animations)) {
+			this.xdirection *= -1;
+		}
+		if(checkCollision(paddleRight.animations, this.animations)) {
 			this.xdirection *= -1;
 		}
 	};
@@ -70,15 +73,27 @@ var PaddleL = function() {
 
 	this.downwardmovement = false;
 	this.upwardmovement = false;
+	
+	this.hitEdge = false;
 
 	gamestage.addChild(this.animations);
-
+/*
+	this.checkScreen = function() {
+		if(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height) {
+			this.hitEdge= true;
+		} 
+	};
+*/
 	this.updatePosition = function() {
-		if(this.downwardmovement) {
+		if(this.downwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
 			this.animations.y++;
-		} else if(this.upwardmovement) {
+		} else if(this.upwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
 			this.animations.y--;
-		}
+		} else if (this.animations.y < 32){
+			this.animations.y = 0;
+		} else if (this.animations.y + 32 > gamestage.canvas.height) {
+			this.animations.y = gamestage.canvas.height-32;
+		} 
 	};
 };
 var PaddleR = function() {
@@ -106,30 +121,34 @@ var PaddleR = function() {
 	gamestage.addChild(this.animations);
 
 	this.updatePosition = function() {
-		if(this.downwardmovement) {
+		if(this.downwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
 			this.animations.y++;
-		} else if(this.upwardmovement) {
+		} else if(this.upwardmovement && !(this.animations.y < 0 || this.animations.y + this.animations.spriteSheet._frameHeight > gamestage.canvas.height)) {
 			this.animations.y--;
-		}
+		} else if (this.animations.y < 32){
+			this.animations.y = 0;
+		} else if (this.animations.y + 32 > gamestage.canvas.height) {
+			this.animations.y = gamestage.canvas.height-32;
+		} 
 	};
 };
-
-var balls=[];
-for (var i =0;i<1; i++){
-	balls[i] = new Ball(i+1);
+var balls = [];
+for(var i = 0; i < 1; i++) {
+	balls[i] = new Ball(i + 1);
 }
 //var ball = new Ball();
 var paddleLeft = new PaddleL();
 var paddleRight = new PaddleR();
 
 var frameTick = function() {
-	for(var i = 0; i<balls.length; i++) {
+	for(var i = 0; i < balls.length; i++) {
 		balls[i].checkCollisions();
 		balls[i].updatePosition();
 	}
 
 	paddleLeft.updatePosition();
 	paddleRight.updatePosition();
+	
 
 	gamestage.update();
 };
@@ -151,7 +170,6 @@ document.onkeyup = function(event) {
 		paddleLeft.upwardmovement = false;
 	}
 };
-
 var prevX = 0;
 var prevY = 0;
 // For right paddle
@@ -159,38 +177,43 @@ document.onmousemove = function(event) {
 	// if the mouse is moving up
 	if(prevY > event.clientY) {
 		console.log("the mouse is moving up");
-		paddleRight.downwardmovement = false;
-		paddleRight.upwardmovement = true;
-	
-	//mouse is moving down
+		console.log("prev - client is: " + (prevY - event.clientY));
+		console.log("client- prev is: " + (event.clientY - prevY));
+		while(prevY > event.clientY) {
+			paddleRight.downwardmovement = false;
+			paddleRight.upwardmovement = true;
+			prevY--;
+		}
+
+		//mouse is moving down
 	} else if(prevY < event.clientY) {
 		console.log("the mouse is moving down");
-		
-		console.log("prevY is:" + prevY + "and event.clientY is: " +event.clientY);
+
+		console.log("prevY is:" + prevY + "and event.clientY is: " + event.clientY);
+		console.log("prev - client is: " + (prevY - event.clientY));
+		console.log("client- prev is: " + (event.clientY - prevY));
 		paddleRight.downwardmovement = true;
 		paddleRight.upwardmovement = false;
-	} else if ((prevY - event.clientY) == 0 ) {
-		//stop moving the paddle down
-		console.log("paddle is stopped");
-		paddleRight.downwardmovement = false;
-		paddleRight.upwardmovement = false;
-	} 
-	prevY = event.clientY;
-	console.log("prev - client is: " + (prevY - event.clientY));
-	console.log("client- prev is: " + (event.clientY - prevY));
-};
-
-/*
-document.onmousemove = function(event) {
-	if(prevY == event.clientY) {
-		//stop moving the paddle
-		console.log("stop moving the paddle");
-		paddleRight.downwardmovement = false;
-		paddleRight.upwardmovement = false;
 	}
-};
-*/
+	/*else if ((prevY - event.clientY)<10 || (event.clientY - prevY) < 10 ) {
+	 //stop moving the paddle down
+	 console.log("paddle is stopped");
+	 paddleRight.downwardmovement = false;
+	 paddleRight.upwardmovement = false;
+	 } */
+	prevY = event.clientY;
 
+};
+/*
+ document.onmousemove = function(event) {
+ if(prevY == event.clientY) {
+ //stop moving the paddle
+ console.log("stop moving the paddle");
+ paddleRight.downwardmovement = false;
+ paddleRight.upwardmovement = false;
+ }
+ };
+ */
 
 createjs.Ticker.addEventListener("tick", frameTick);
 createjs.Ticker.setFPS(60);
